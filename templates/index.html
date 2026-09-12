@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Set up a Roast Battle{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2>Set up the battle</h2>
+
+  {% if not has_api_key %}
+    <p class="notice">
+      ⚠️ No <code>GEMINI_API_KEY</code> found on the server. You can still try the
+      <strong>Demo</strong> below to test the Malayalam voices — set the key in your
+      <code>.env</code> file to run live AI battles.
+    </p>
+  {% endif %}
+
+  <form action="{{ url_for('battle') }}" method="post" class="battle-form">
+    <input type="hidden" name="mode" value="battle" />
+
+    <label for="object_a">🟢 Object A (e.g. കട്ടൻ ചായ, പൊട്ടിയ കുട)</label>
+    <input type="text" id="object_a" name="object_a" placeholder="കട്ടൻ ചായ" {% if not has_api_key %}disabled{% endif %} />
+
+    <label for="object_b">🔴 Object B (e.g. പഴംപൊരി, തുരുമ്പിച്ച സൈക്കിൾ)</label>
+    <input type="text" id="object_b" name="object_b" placeholder="പഴംപൊരി" {% if not has_api_key %}disabled{% endif %} />
+
+    <label for="rounds">Number of rounds</label>
+    <input type="number" id="rounds" name="rounds" min="1" max="8" value="3" {% if not has_api_key %}disabled{% endif %} />
+
+    <button type="submit" class="btn primary" {% if not has_api_key %}disabled{% endif %}>
+      ⚔️ Start Battle
+    </button>
+  </form>
+
+  <div class="divider">or</div>
+
+  <form action="{{ url_for('battle') }}" method="post">
+    <input type="hidden" name="mode" value="demo" />
+    <button type="submit" class="btn secondary">▶️ Run Instant Demo (no API key needed)</button>
+  </form>
+</div>
+
+{% endblock %}
