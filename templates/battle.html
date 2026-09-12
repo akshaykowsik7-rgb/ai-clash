@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Battle Results{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2>{{ object_a }} <span class="vs">vs</span> {{ object_b }}</h2>
+
+  <div class="turns">
+    {% for turn in turns %}
+      <div class="turn turn-{{ turn.speaker|lower }}">
+
+        <div class="turn-label">
+          {% if turn.speaker == "A" %}
+            🟢
+          {% elif turn.speaker == "B" %}
+            🔴
+          {% else %}
+            ⚖️
+          {% endif %}
+          {{ turn.label }}
+        </div>
+
+        <p class="turn-text">{{ turn.text }}</p>
+
+        {% if turn.audio %}
+          <audio
+            class="conversation-audio"
+            preload="auto"
+            src="{{ url_for('static', filename='audio/' ~ session_id ~ '/' ~ turn.audio) }}">
+          </audio>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if judge_raw %}
+    <div class="verdict">
+      <h3>⚖️ Full Verdict</h3>
+      <pre>{{ judge_raw }}</pre>
+    </div>
+  {% endif %}
+
+  <a href="{{ url_for('index') }}" class="btn primary">
+    🔁 New Battle
+  </a>
+</div>
+
+
+<!-- Hide individual audio players -->
+<style>
+  .conversation-audio {
+    display: none;
+  }
+</style>
+
+
+<!-- Automatic conversation playback -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const audioQueue = Array.from(
+        document.querySelectorAll(".conversation-audio")
+    );
+
+    if (audioQueue.length === 0) {
+        return;
+    }
+
+    let currentIndex = 0;
+    let isPlaying = false;
+
+
+    function stopAllAudio() {
+        audioQueue.forEach(function (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+    }
+
+
+    function playNext() {
+
+        // All speakers have finished
+        if (currentIndex >= audioQueue.length) {
+            isPlaying = false;
+            console.log("Conversation finished.");
+            return;
+        }
+
+        // Prevent two audio files from playing together
+        if (isPlaying) {
+            return;
+        }
+
+        const currentAudio = audioQueue[currentIndex];
+
+        // Stop every other audio before starting this one
+        stopAllAudio();
+
+        isPlaying = true;
+
+        currentAudio.currentTime = 0;
+
+        console.log(
+            "Playing turn:",
+            currentIndex + 1,
+            "of",
+            audioQueue.length
+        );
+
+        currentAudio.play()
+            .then(function () {
+
+                console.log(
+                    "Speaker",
+                    currentIndex + 1,
+                    "started."
+                );
+
+            })
+            .catch(function (error) {
+
+                console.error(
+                    "Could not start audio:",
+                    error
+                );
+
+                isPlaying = false;
+            });
+
+
+        // Wait until the CURRENT speaker completely finishes
+        currentAudio.onended = function () {
+
+            console.log(
+                "Speaker",
+                currentIndex + 1,
+                "finished."
+            );
+
+            isPlaying = false;
+
+            currentIndex++;
+
+            // Small natural pause before the next speaker
+            setTimeout(function () {
+                playNext();
+            }, 300);
+        };
+
+
+        // If an audio file has an error, skip it and continue
+        currentAudio.onerror = function () {
+
+            console.error(
+                "Audio error on turn:",
+                currentIndex + 1
+            );
+
+            isPlaying = false;
+
+            currentIndex++;
+
+            playNext();
+        };
+    }
+
+
+    // Start the conversation automatically
+    playNext();
+
+});
+</script>
+
+{% endblock %}
